@@ -1,8 +1,7 @@
 import React, { Component } from 'react';
+import { connect } from 'react-redux';
 import ListItemCompleted from './ListItemCompleted';
 import BarChartComponent from './Graphs/BarChart';
-
-import { connect } from 'react-redux';
 import axios from 'axios';
 import { API_URL } from '../../../actions';
 
@@ -24,14 +23,14 @@ class Completed extends Component {
   }
 
   componentDidMount() {
-
     this.getOrdersForMonth(this.state.month);
   }
 
   getOrdersForMonth(month) {
-
+    console.log(this.props.auth);
     axios.post(`${API_URL}/driver/orders/completed/month`, { auth: this.props.auth, month })
     .then(({ data }) => {
+      console.log(data);
       this.setState({ orders: data, month: parseInt(month) });
     })
   }
@@ -69,9 +68,6 @@ class Completed extends Component {
 
         {this.state.orders.length === 0 ? <h1>No Completed Orders</h1> : null}
 
-        {/* Charts go here */}
-{/*
-        <button style={styles.buttonStyle}> Generate Reports </button> */}
         {console.log("logging in render", this.state.month)}
         <select onChange={this.onMonthChange} value={this.state.month}>
           <option value={0}>January</option>

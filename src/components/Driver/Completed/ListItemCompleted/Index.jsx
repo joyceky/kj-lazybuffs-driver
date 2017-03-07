@@ -7,15 +7,12 @@ class ListItemCompleted extends Component {
   render() {
     return (
       <section style={style}>
-
-
-
-        {/* <ListItemCollapsed order={this.props.order} />
+        <ListItemCollapsed order={this.props.order} />
 
         {this.props.activeListItem === this.props.order.orderId
           ? <ListItemExpanded order={this.props.order} />
           : null
-        } */}
+        }
       </section>
     );
   }
