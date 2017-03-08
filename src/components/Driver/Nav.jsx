@@ -6,11 +6,10 @@ import { Link } from 'react-router';
 
 const NavButton = ({ iconName, to }) => {
   return (
-    <button
-      style={style.button}
-      >
+    <button>
       <Link
         to={to}
+        style={style.button}
         activeStyle={style.buttonActive}
       >
         <i className="material-icons" style={style.buttonIcon}>{iconName}</i>
@@ -60,7 +59,7 @@ const style = {
     height: '50px',
     width: '25%',
     outline: 'none',
-    color: '#CFB87C',
+    color: 'rgba(255, 255, 255, 0.8)',
     margin: '0',
     padding: '0',
   },
@@ -68,8 +67,7 @@ const style = {
     height: '50px',
     width: '25%',
     outline: 'none',
-    color: '#CFB87C',
-    borderBottom: '2px solid #CFB87C',
+    color: 'rgb(255, 179, 0)',
   },
   buttonIcon: {
     fontSize: '36px',
