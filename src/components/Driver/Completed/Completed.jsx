@@ -5,103 +5,227 @@ import BarChartComponent from './Graphs/BarChart';
 import axios from 'axios';
 import { API_URL } from '../../../actions';
 
-
-class Completed extends Component {
+class CompletedOrders extends Component {
   constructor() {
     super();
 
-    let today = new Date(Date.now());
+    const today = new Date(Date.now());
+    const adjustedToday = today.getTimezoneOffset();
 
     this.state = {
       orders: [],
-      month: today.getMonth()
+      month: today.getMonth(),
+      year: today.getFullYear(),
+      loading: false,
+      showInvoice: false
     };
 
-    this.getOrdersForMonth = this.getOrdersForMonth.bind(this);
-    this.onMonthChange = this.onMonthChange.bind(this);
+    this.getOrderData = this.getOrderData.bind(this);
+    this.selectMonth = this.selectMonth.bind(this);
+    this.selectYear = this.selectYear.bind(this);
+    // this.onOrderTypeChange = this.onOrderTypeChange.bind(this);
     this.formatData = this.formatData.bind(this);
   }
 
   componentDidMount() {
-    this.getOrdersForMonth(this.state.month);
+    this.getOrderData(this.state.month, this.state.year);
   }
 
-  getOrdersForMonth(month) {
-    console.log(this.props.auth);
-    axios.post(`${API_URL}/driver/orders/completed/month`, { auth: this.props.auth, month })
-    .then(({ data }) => {
-      console.log(data);
-      this.setState({ orders: data, month: parseInt(month) });
-    })
-  }
+  getOrderData(month, year) {
+    this.setState({ loading: true });
+
+      console.log(`${API_URL}/driver/orders/completed/month`, { auth: this.props.auth, month, year});
+      axios.post(`${API_URL}/driver/orders/completed/month`, { auth: this.props.auth, month, year })
+        .then(({ data }) => {
+          this.setState({ orders: data, month, loading: false, shouldChartsBeVisible: true });
+        })
+        .catch((err) => {
+          console.log("Error: ", err);
+          this.setState({ loading: false });
+        })
+      }
 
   formatData(orders) {
-    const days = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31];
+      let month = parseInt(this.state.month)+1;
+      const daysNum = new Date(this.state.year, month, 0).getDate();
+      const days = [];
 
-    const cleanData = days.map((day) => {
-      const daysOrders = orders.filter((order) => {
-        if ( new Date(parseInt(order.orderCreatedAt)).getDate() === day) return true;
+      for (var i = 1; i <= daysNum; i++) { days.push(i) };
+
+      const cleanData = days.map((day) => {
+        const daysOrders = orders.filter((order) => {
+          if ( new Date(parseInt(order.orderCreatedAt) + 420).getDate() === day) return true;
+        });
+        const total = daysOrders.reduce((curr, nextOrder) => {
+           return curr + parseFloat(nextOrder.orderSubTotal) ;
+        }, 0);
+
+        return { date: day, total, orders: daysOrders.length };
       });
 
-      const total = daysOrders.reduce((curr, nextOrder) => {
-        return curr + parseFloat(nextOrder.orderSubTotal);
-      }, 0);
+      return cleanData;
+    }
 
-      const tips = daysOrders.reduce((curr, nextOrder) => {
-        return curr + parseFloat(nextOrder.orderTip);
-      }, 0);
-
-      return { date: day, total, tips, orders: daysOrders.length };
-    });
-
-    return cleanData;
+  selectMonth(event) {
+    let month = event.target.value;
+    this.setState({ month });
+    this.getOrderData(month, this.state.year);
   }
 
-  onMonthChange(event) {
-    // console.log("event target val", event.target.value);
-    this.getOrdersForMonth(event.target.value);
+  selectYear(event){
+    let year = event.target.value;
+    this.setState({ year });
+    this.getOrderData(this.state.month, year);
+  }
+
+  // onOrderTypeChange(event) {
+  //   let orderType = event.target.value;
+  // }
+
+  calcRevenue(orders){
+      return orders
+      .reduce((curr, nextOrder) => {
+        let sub = (parseFloat(curr) + parseFloat(nextOrder.orderTip)).toFixed(2);
+        return parseFloat(sub) || 0.00;
+      }, 0);
   }
 
   render() {
+    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
     return (
-      <section>
+        <section style={style.container}>
 
-        {this.state.orders.length === 0 ? <h1>No Completed Orders</h1> : null}
+           <section style={style.header}>
+             <section style={style.buttonContainer}>
+                 <select style={style.select} onChange={this.selectMonth} value={this.state.month}>
+                   {
+                      months.map((monthVal, i) => {
+                        return <option value={i} key={i}>{monthVal}</option>
+                      })
+                    }
+                  </select>
 
-        {console.log("logging in render", this.state.month)}
-        <select onChange={this.onMonthChange} value={this.state.month}>
-          <option value={0}>January</option>
-          <option value={1}>February</option>
-          <option value={2}>March</option>
-          <option value={3}>April</option>
-          <option value={4}>May</option>
-          <option value={5}>June</option>
-          <option value={6}>July</option>
-          <option value={7}>August</option>
-          <option value={8}>September</option>
-          <option value={9}>October</option>
-          <option value={10}>November</option>
-          <option value={11}>December</option>
-        </select>
+                  <select style={style.select} onChange={this.selectYear} value={this.state.year}>
+                    {
+                      [2014,2015,2016,2017]
+                      .map((year, i) => {
+                        return <option key={i} value={year}>{year}</option>
+                      })
+                    }
+                  </select>
+              </section>
 
-        <BarChartComponent orders={this.formatData(this.state.orders)} dataKey="orders" color="#7830ee" />
+              <section style={style.overviewContainer}>
+                <p style={{padding: '10px'}}>{`Orders: ${ this.state.orders.length }`}</p>
 
-        <BarChartComponent orders={this.formatData(this.state.orders)} dataKey="tips" color="#3cd54f"/>
+                <p style={{padding: '10px'}}>{` Revenue: $${ (this.calcRevenue(this.state.orders)) }`}</p>
+              </section>
+            </section>
 
-        <ul>
-          {this.state.orders.map(order => <ListItemCompleted order={order} key={order.orderId} />)}
-        </ul>
+          { this.state.loading ?
+            <span style={style.subContainer}>
+              <h1 style={style.title}>Loading analytics...</h1>
+            </span>
+            : null }
 
-      </section>
+          { !this.state.loading && this.state.orders.length === 0 ?
+            <span style={style.subContainer}>
+              <h1 style={style.title}>No Completed Orders For This Period</h1>
+            </span> : null }
+
+          { !this.state.loading && this.state.orders.length > 0
+            ?
+            <div>
+              <section style={style.chartContainer}>
+                <div style={{zIndex: '0'}}>
+                  <p>Order Analytics</p>
+                  <BarChartComponent orders={this.formatData(this.state.orders)} dataKey="orders" color="#CFB87C" />
+
+                  <p>Revenue Analytics</p>
+                  <BarChartComponent orders={this.formatData(this.state.orders)} dataKey="total" color="#A2A4A3" />
+                </div>
+              </section>
+            </div>
+            : null }
+
+            <ul style={style.listStyle}>
+              {this.state.orders.map((order) => {
+                return  <ListItemCompleted order={order} key={order.orderId} />
+              })}
+            </ul>
+          </section>
     );
   }
 }
 
-const styles = {
-  buttonStyle: {
-    backgroundColor: '#817c7e',
-    border: '1px #403e40 solid',
-    margin: '10'
+const style = {
+  container: {
+    marginTop: '50px',
+    display: 'flex',
+    flexDirection: 'column',
+    width: '100%'
+  },
+  subContainer: {
+    display: 'flex',
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  btn: {
+    borderRadius: '5px',
+    display: 'block',
+    padding: '8px 10px',
+    fontSize: '22px',
+    textDecoration: 'none',
+    color: '#fff',
+    backgroundColor: 'black',
+    boxShadow: '0px 5px 0px 0px #565A5C',
+    fontSize: '18px'
+  },
+  buttonContainer: {
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '50%',
+  },
+  overviewContainer: {
+    display: 'flex',
+    width: '50%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  title: {
+    fontSize: '20px',
+    margin: '16px',
+    padding: '0',
+  },
+  select: {
+    height: '35px',
+    fontSize: '18px',
+    margin: '8px',
+    backgroundColor: '#fff',
+    color: "#565A5C"
+  },
+  header: {
+    width: '100%',
+    boxSizing: 'border-box',
+    display: 'flex',
+    flexDirection: 'row',
+    fontSize: '18px',
+  },
+  chartContainer: {
+    maxWidth: '100%',
+    overflow: 'scroll',
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    height: 'auto',
+    width: 'auto',
+    fontSize: '20px',
+    textAlign: 'center'
   }
 }
 
@@ -109,4 +233,4 @@ function mapStateToProps({ auth }) {
   return { auth };
 }
 
-export default connect(mapStateToProps, null)(Completed);
+export default connect(mapStateToProps, null)(CompletedOrders);

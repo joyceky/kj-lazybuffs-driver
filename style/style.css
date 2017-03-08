@@ -5,17 +5,11 @@ body {
   padding: 0;
   color: rgba(0,0,0,0.7);
 }
-
 .container-fluid{
   height: 100vh;
   width: 100vw;
   margin: 0;
   padding: 0;
-}
-
-a, a:visited, a:hover, a:active {
-  text-decoration: none;
-  color: inherit;
 }
 
 h1, h2, h3, h4, h5, h6, p, {
@@ -28,6 +22,26 @@ button{
   margin: 0;
   padding: 0;
   background-color: rgba(0,0,0,0)
+}
+
+button:hover{
+  cursor: pointer;
+}
+
+.nav-button {
+  color: white;
+}
+
+.nav-button:hover {
+  color: #CFB87C;
+}
+
+.generate-invoice-button{
+  color: black;
+}
+
+.generate-invoice-button:hover{
+  color: #CFB87C;
 }
 
 .map-icon-unassigned{
